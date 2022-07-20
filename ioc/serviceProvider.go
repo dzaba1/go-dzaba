@@ -5,7 +5,13 @@ import (
 	"reflect"
 )
 
+type Closeable interface {
+	Close() error
+}
+
 type ServiceScope interface {
+	Closeable
+
 	Resolve(serviceType reflect.Type) (any, error)
 	ResolveAll(serviceType reflect.Type) ([]any, error)
 }
@@ -14,6 +20,13 @@ type ServiceProvider interface {
 	ServiceScope
 
 	CreateScope() (ServiceScope, error)
+}
+
+type serviceProviderImpl struct {
+}
+
+func newServiceProvider() (ServiceProvider, error) {
+	return &serviceProviderImpl{}, nil
 }
 
 func Resolve[T any](provider ServiceScope) (T, error) {
