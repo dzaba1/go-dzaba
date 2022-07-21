@@ -43,7 +43,7 @@ func (services *servicesCollectionImpl) getCtorDescriptor(ctorFunc any) (*ctorDe
 	kind := ctorType.Kind()
 
 	if kind != reflect.Func {
-		return nil, NewIocError("Invalid kind.")
+		return nil, NewIocError(fmt.Sprintf("Invalid kind '%s'. Expected '%s'.", kind.String(), reflect.Func.String()))
 	}
 
 	inArgsCount := ctorType.NumIn()
@@ -54,9 +54,19 @@ func (services *servicesCollectionImpl) getCtorDescriptor(ctorFunc any) (*ctorDe
 		inArgTypes = append(inArgTypes, argType)
 	}
 
+	hasError := false
 	outArgsCount := ctorType.NumOut()
 	if outArgsCount > 2 {
-		return nil, NewIocError("Invalid num of out args.")
+		return nil, NewIocError(fmt.Sprintf("Invalid num of out args. Expected maximum 2, got %d.", outArgsCount))
+	}
+	if outArgsCount == 2 {
+		errorType := utils.TypeOfGeneric[error]()
+		secondType := ctorType.Out(1)
+		if !utils.IsOrImplements(secondType, errorType) {
+			return nil, NewIocError(fmt.Sprintf("Invalid second argument type. Expected '%s', got '%s'.", errorType.String(), secondType.String()))
+		}
+
+		hasError = true
 	}
 
 	outType := ctorType.Out(0)
@@ -66,7 +76,7 @@ func (services *servicesCollectionImpl) getCtorDescriptor(ctorFunc any) (*ctorDe
 		ctorType:   ctorType,
 		inArgTypes: inArgTypes,
 		outArgType: outType,
-		hasError:   outArgsCount == 2,
+		hasError:   hasError,
 	}, nil
 }
 
