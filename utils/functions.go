@@ -1,6 +1,8 @@
 package utils
 
-import "reflect"
+import (
+	"reflect"
+)
 
 func TypeOfGeneric[T any]() reflect.Type {
 	var empty T
@@ -24,6 +26,17 @@ func DefaultGeneric[T any]() T {
 
 func IsOrImplements(currentType reflect.Type, expected reflect.Type) bool {
 	expectedKind := expected.Kind()
+	currentKind := currentType.Kind()
+	inherits := false
 
-	return currentType == expected || expectedKind == reflect.Interface && currentType.Implements(expected)
+	if currentKind == reflect.Struct {
+		fieldsNum := currentType.NumField()
+		for i := 0; i < fieldsNum; i++ {
+			field := currentType.Field(i)
+			fieldType := field.Type
+			inherits = field.Anonymous && IsOrImplements(fieldType, expected)
+		}
+	}
+
+	return currentType == expected || expectedKind == reflect.Interface && currentType.Implements(expected) || inherits
 }

@@ -22,6 +22,10 @@ type subMyInterfaceImpl struct {
 	myInterfaceImpl
 }
 
+type subSubMyInterfaceImpl struct {
+	subMyInterfaceImpl
+}
+
 func NewMyInterface() myInterface {
 	return &myInterfaceImpl{}
 }
@@ -46,7 +50,11 @@ func Test_IsOrImplements_WhenTypesProvided_ThenItMakesChecks(t *testing.T) {
 	isOrImplementsCheck(t, TypeOfGeneric[int](), TypeOfGeneric[map[int]string](), false)
 	isOrImplementsCheck(t, TypeOfGeneric[subMyInterfaceImpl](), TypeOfGeneric[myInterfaceImpl](), true)
 	isOrImplementsCheck(t, TypeOfGeneric[*subMyInterfaceImpl](), TypeOfGeneric[*myInterfaceImpl](), true)
+	isOrImplementsCheck(t, TypeOfGeneric[*subMyInterfaceImpl](), TypeOfGeneric[myInterface](), true)
 	isOrImplementsCheck(t, TypeOfGeneric[subMyInterface](), TypeOfGeneric[myInterface](), true)
+	isOrImplementsCheck(t, TypeOfGeneric[subSubMyInterfaceImpl](), TypeOfGeneric[myInterfaceImpl](), true)
+	isOrImplementsCheck(t, TypeOfGeneric[*subSubMyInterfaceImpl](), TypeOfGeneric[*myInterfaceImpl](), true)
+	isOrImplementsCheck(t, TypeOfGeneric[*subSubMyInterfaceImpl](), TypeOfGeneric[myInterface](), true)
 }
 
 func isOrImplementsCheck(t *testing.T, current reflect.Type, toBe reflect.Type, expected bool) {
@@ -57,5 +65,5 @@ func isOrImplementsCheck(t *testing.T, current reflect.Type, toBe reflect.Type, 
 	assert.True(t, result)
 
 	result = IsOrImplements(current, toBe)
-	assert.Equal(t, expected, result, "Current '%s', toBe '%s'", toBe.String(), current.String())
+	assert.Equal(t, expected, result, "Current '%s', toBe '%s'", current.String(), toBe.String())
 }
