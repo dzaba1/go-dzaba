@@ -25,7 +25,15 @@ func DefaultGeneric[T any]() T {
 }
 
 func IsOrImplements(currentType reflect.Type, expected reflect.Type) bool {
+	if currentType == expected {
+		return true
+	}
+
 	expectedKind := expected.Kind()
+	if expectedKind == reflect.Interface && currentType.Implements(expected) {
+		return true
+	}
+
 	currentKind := currentType.Kind()
 	inherits := false
 
@@ -38,5 +46,5 @@ func IsOrImplements(currentType reflect.Type, expected reflect.Type) bool {
 		}
 	}
 
-	return currentType == expected || expectedKind == reflect.Interface && currentType.Implements(expected) || inherits
+	return inherits
 }
