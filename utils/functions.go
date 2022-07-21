@@ -3,7 +3,18 @@ package utils
 import "reflect"
 
 func TypeOfGeneric[T any]() reflect.Type {
-	return reflect.TypeOf(DefaultGeneric[T]())
+	var empty T
+	typ := reflect.TypeOf(empty)
+
+	if typ == nil {
+		hack := func() T {
+			return DefaultGeneric[T]()
+		}
+		hackType := reflect.TypeOf(hack)
+		typ = hackType.Out(0)
+	}
+
+	return typ
 }
 
 func DefaultGeneric[T any]() T {
@@ -12,5 +23,7 @@ func DefaultGeneric[T any]() T {
 }
 
 func IsOrImplements(currentType reflect.Type, expected reflect.Type) bool {
-	return currentType == expected || expected.Kind() == reflect.Interface && currentType.Implements(expected)
+	expectedKind := expected.Kind()
+
+	return currentType == expected || expectedKind == reflect.Interface && currentType.Implements(expected)
 }
