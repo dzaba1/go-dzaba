@@ -35,16 +35,17 @@ func IsOrImplements(currentType reflect.Type, expected reflect.Type) bool {
 	}
 
 	currentKind := currentType.Kind()
-	inherits := false
 
 	if currentKind == reflect.Struct {
 		fieldsNum := currentType.NumField()
 		for i := 0; i < fieldsNum; i++ {
 			field := currentType.Field(i)
 			fieldType := field.Type
-			inherits = field.Anonymous && IsOrImplements(fieldType, expected)
+			if field.Anonymous && IsOrImplements(fieldType, expected) {
+				return true
+			}
 		}
 	}
 
-	return inherits
+	return false
 }

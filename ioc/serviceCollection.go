@@ -6,39 +6,37 @@ import (
 	"reflect"
 )
 
-type ServicesCollection interface {
+type ServiceCollection interface {
 	BuildServiceProvder() (ServiceProvider, error)
 	AddTransientSelf(selfType reflect.Type, ctorFunc any) error
 }
 
-type servicesCollectionImpl struct {
+type serviceCollectionImpl struct {
 }
 
-func NewServiceCollection() ServicesCollection {
-	return &servicesCollectionImpl{}
+func NewServiceCollection() ServiceCollection {
+	return &serviceCollectionImpl{}
 }
 
-func (services *servicesCollectionImpl) BuildServiceProvder() (ServiceProvider, error) {
+func (services *serviceCollectionImpl) BuildServiceProvder() (ServiceProvider, error) {
 	return newServiceProvider()
 }
 
-func (services *servicesCollectionImpl) AddTransientSelf(selfType reflect.Type, ctorFunc any) error {
-	ctorDescriptor, err := services.getCtorDescriptor(ctorFunc)
+func (services *serviceCollectionImpl) AddTransientSelf(selfType reflect.Type, ctorFunc any) error {
+	ctorDescriptor, err := getCtorDescriptor(ctorFunc)
 	if err != nil {
 		return err
 	}
 
-	if ctorDescriptor.outArgType != selfType {
-		if !selfType.Implements(ctorDescriptor.outArgType) {
-			errMsg := fmt.Sprintf("Invalid constructor out type. Expected '%s', got '%s'.", selfType.String(), ctorDescriptor.outArgType.String())
-			return NewIocError(errMsg)
-		}
+	if !utils.IsOrImplements(selfType, ctorDescriptor.outArgType) {
+		errMsg := fmt.Sprintf("Invalid constructor out type. Expected '%s', got '%s'.", selfType.String(), ctorDescriptor.outArgType.String())
+		return NewIocError(errMsg)
 	}
 
 	return nil
 }
 
-func (services *servicesCollectionImpl) getCtorDescriptor(ctorFunc any) (*ctorDescriptor, error) {
+func getCtorDescriptor(ctorFunc any) (*ctorDescriptor, error) {
 	ctorType := reflect.TypeOf(ctorFunc)
 	kind := ctorType.Kind()
 
@@ -80,7 +78,7 @@ func (services *servicesCollectionImpl) getCtorDescriptor(ctorFunc any) (*ctorDe
 	}, nil
 }
 
-func AddTransientSelf[T any](services ServicesCollection, ctorFunc any) error {
+func AddTransientSelf[T any](services ServiceCollection, ctorFunc any) error {
 	genType := utils.TypeOfGeneric[T]()
 
 	return services.AddTransientSelf(genType, ctorFunc)
