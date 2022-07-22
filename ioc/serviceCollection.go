@@ -2,28 +2,29 @@ package ioc
 
 import (
 	"dzaba/go-dzaba/utils"
+	"errors"
 	"fmt"
 	"reflect"
 )
 
 type ServiceCollection interface {
 	BuildServiceProvder() (ServiceProvider, error)
-	Registrations() []Registration
+	Registrations() map[reflect.Type]Registration
 
 	AddTransientSelf(selfType reflect.Type, ctorFunc any) error
 }
 
 type serviceCollectionImpl struct {
-	registrations []Registration
+	registrations map[reflect.Type]Registration
 }
 
 func NewServiceCollection() ServiceCollection {
 	return &serviceCollectionImpl{
-		registrations: []Registration{},
+		registrations: make(map[reflect.Type]Registration),
 	}
 }
 
-func (services *serviceCollectionImpl) Registrations() []Registration {
+func (services *serviceCollectionImpl) Registrations() map[reflect.Type]Registration {
 	return services.registrations
 }
 
@@ -39,12 +40,12 @@ func (services *serviceCollectionImpl) AddTransientSelf(selfType reflect.Type, c
 
 	if !utils.IsOrImplements(selfType, ctorDescriptor.outArgType) {
 		errMsg := fmt.Sprintf("Invalid constructor out type. Expected '%s', got '%s'.", selfType.String(), ctorDescriptor.outArgType.String())
-		return NewIocError(errMsg)
+		return errors.New(errMsg)
 	}
 
 	lifetime := newTransientLifetimeManager()
 	registration := newRegistration(ctorDescriptor, selfType, selfType, lifetime)
-	services.registrations = append(services.registrations, registration)
+	services.registrations[selfType] = registration
 
 	return nil
 }
@@ -54,7 +55,7 @@ func getCtorDescriptor(ctorFunc any) (*ctorDescriptor, error) {
 	kind := ctorType.Kind()
 
 	if kind != reflect.Func {
-		return nil, NewIocError(fmt.Sprintf("Invalid kind '%s'. Expected '%s'.", kind.String(), reflect.Func.String()))
+		return nil, errors.New(fmt.Sprintf("Invalid kind '%s'. Expected '%s'.", kind.String(), reflect.Func.String()))
 	}
 
 	inArgsCount := ctorType.NumIn()
@@ -68,13 +69,13 @@ func getCtorDescriptor(ctorFunc any) (*ctorDescriptor, error) {
 	hasError := false
 	outArgsCount := ctorType.NumOut()
 	if outArgsCount > 2 {
-		return nil, NewIocError(fmt.Sprintf("Invalid num of out args. Expected maximum 2, got %d.", outArgsCount))
+		return nil, errors.New(fmt.Sprintf("Invalid num of out args. Expected maximum 2, got %d.", outArgsCount))
 	}
 	if outArgsCount == 2 {
 		errorType := utils.TypeOfGeneric[error]()
 		secondType := ctorType.Out(1)
 		if !utils.IsOrImplements(secondType, errorType) {
-			return nil, NewIocError(fmt.Sprintf("Invalid second argument type. Expected '%s', got '%s'.", errorType.String(), secondType.String()))
+			return nil, errors.New(fmt.Sprintf("Invalid second argument type. Expected '%s', got '%s'.", errorType.String(), secondType.String()))
 		}
 
 		hasError = true
