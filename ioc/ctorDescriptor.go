@@ -9,3 +9,7 @@ type ctorDescriptor struct {
 	outArgType reflect.Type
 	hasError   bool
 }
+
+func (c *ctorDescriptor) activate(args ...any) (any, error) {
+	return nil, nil
+}

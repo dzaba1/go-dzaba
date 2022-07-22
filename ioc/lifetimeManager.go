@@ -25,6 +25,7 @@ func (t LifetimeType) String() string {
 
 type LifetimeManager interface {
 	Type() LifetimeType
+	Instance() any
 }
 
 type transientLifetime struct {
@@ -36,4 +37,8 @@ func newTransientLifetimeManager() LifetimeManager {
 
 func (t *transientLifetime) Type() LifetimeType {
 	return Transient
+}
+
+func (t *transientLifetime) Instance() any {
+	return nil
 }

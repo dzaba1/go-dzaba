@@ -58,3 +58,10 @@ func (s *Stack[T]) Count() int {
 
 	return len(s.list)
 }
+
+func (s *Stack[T]) GetList() []T {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.list
+}
