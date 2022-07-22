@@ -8,14 +8,23 @@ import (
 
 type ServiceCollection interface {
 	BuildServiceProvder() (ServiceProvider, error)
+	Registrations() []Registration
+
 	AddTransientSelf(selfType reflect.Type, ctorFunc any) error
 }
 
 type serviceCollectionImpl struct {
+	registrations []Registration
 }
 
 func NewServiceCollection() ServiceCollection {
-	return &serviceCollectionImpl{}
+	return &serviceCollectionImpl{
+		registrations: []Registration{},
+	}
+}
+
+func (services *serviceCollectionImpl) Registrations() []Registration {
+	return services.registrations
 }
 
 func (services *serviceCollectionImpl) BuildServiceProvder() (ServiceProvider, error) {
@@ -32,6 +41,10 @@ func (services *serviceCollectionImpl) AddTransientSelf(selfType reflect.Type, c
 		errMsg := fmt.Sprintf("Invalid constructor out type. Expected '%s', got '%s'.", selfType.String(), ctorDescriptor.outArgType.String())
 		return NewIocError(errMsg)
 	}
+
+	lifetime := newTransientLifetimeManager()
+	registration := newRegistration(ctorDescriptor, selfType, selfType, lifetime)
+	services.registrations = append(services.registrations, registration)
 
 	return nil
 }
