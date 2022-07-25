@@ -44,3 +44,22 @@ func Test_AddTransientSelf_WhenServiceIsRegisteredAsSelfTransientWithoutDependen
 	assert.NotNil(t, service2)
 	assert.NotEqual(t, service1.GetId(), service2.GetId())
 }
+
+func Test_AddSingletonSelf_WhenServiceIsRegisteredAsSelfSingletonWithoutDependencies_ThenTheSameInstance(t *testing.T) {
+	services := ioc.NewServiceCollection()
+	err := ioc.AddSingletonSelf[*firstTestInterfaceImpl](services, NewFirstTestInterface)
+	assert.Nil(t, err)
+
+	provider, err := services.BuildServiceProvder()
+	assert.Nil(t, err)
+
+	service1, err := ioc.Resolve[*firstTestInterfaceImpl](provider)
+	assert.Nil(t, err)
+
+	service2, err := ioc.Resolve[*firstTestInterfaceImpl](provider)
+	assert.Nil(t, err)
+
+	assert.NotNil(t, service1)
+	assert.NotNil(t, service2)
+	assert.Equal(t, service1.GetId(), service2.GetId())
+}

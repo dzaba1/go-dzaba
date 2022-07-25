@@ -12,6 +12,7 @@ type ServiceCollection interface {
 	Registrations() map[reflect.Type]Registration
 
 	AddTransientSelf(selfType reflect.Type, ctorFunc any) error
+	AddSingletonSelf(selfType reflect.Type, ctorFunc any) error
 }
 
 type serviceCollectionImpl struct {
@@ -37,18 +38,45 @@ func (services *serviceCollectionImpl) BuildServiceProvder() (ServiceProvider, e
 	return newServiceProvider(resolver)
 }
 
+func validateSelfType(selfType reflect.Type, ctorDescriptor *ctorDescriptor) error {
+	if !utils.IsOrImplements(selfType, ctorDescriptor.outArgType) {
+		errMsg := fmt.Sprintf("Invalid constructor out type. Expected '%s', got '%s'.", selfType.String(), ctorDescriptor.outArgType.String())
+		return errors.New(errMsg)
+	}
+
+	return nil
+}
+
 func (services *serviceCollectionImpl) AddTransientSelf(selfType reflect.Type, ctorFunc any) error {
 	ctorDescriptor, err := getCtorDescriptor(ctorFunc)
 	if err != nil {
 		return err
 	}
 
-	if !utils.IsOrImplements(selfType, ctorDescriptor.outArgType) {
-		errMsg := fmt.Sprintf("Invalid constructor out type. Expected '%s', got '%s'.", selfType.String(), ctorDescriptor.outArgType.String())
-		return errors.New(errMsg)
+	err = validateSelfType(selfType, ctorDescriptor)
+	if err != nil {
+		return err
 	}
 
 	lifetime := newTransientLifetimeManager()
+	registration := newRegistration(ctorDescriptor, selfType, selfType, lifetime)
+	services.registrations[selfType] = registration
+
+	return nil
+}
+
+func (services *serviceCollectionImpl) AddSingletonSelf(selfType reflect.Type, ctorFunc any) error {
+	ctorDescriptor, err := getCtorDescriptor(ctorFunc)
+	if err != nil {
+		return err
+	}
+
+	err = validateSelfType(selfType, ctorDescriptor)
+	if err != nil {
+		return err
+	}
+
+	lifetime := newSingletonLifetimeManager()
 	registration := newRegistration(ctorDescriptor, selfType, selfType, lifetime)
 	services.registrations[selfType] = registration
 
@@ -101,4 +129,10 @@ func AddTransientSelf[T any](services ServiceCollection, ctorFunc any) error {
 	genType := utils.TypeOfGeneric[T]()
 
 	return services.AddTransientSelf(genType, ctorFunc)
+}
+
+func AddSingletonSelf[T any](services ServiceCollection, ctorFunc any) error {
+	genType := utils.TypeOfGeneric[T]()
+
+	return services.AddSingletonSelf(genType, ctorFunc)
 }
