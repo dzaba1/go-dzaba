@@ -1,6 +1,9 @@
 package ioc
 
-import "reflect"
+import (
+	"dzaba/go-dzaba/collections"
+	"reflect"
+)
 
 type ctorDescriptor struct {
 	ctor       any
@@ -11,5 +14,19 @@ type ctorDescriptor struct {
 }
 
 func (c *ctorDescriptor) activate(args ...any) (any, error) {
-	return nil, nil
+	ctorValue := reflect.ValueOf(c.ctor)
+	argValues := collections.SelectMust(args, func(arg any) reflect.Value {
+		return reflect.ValueOf(arg)
+	})
+
+	resultValues := ctorValue.Call(argValues)
+	result := collections.SelectMust(resultValues, func(elem reflect.Value) any {
+		return elem.Interface()
+	})
+
+	if len(result) == 1 {
+		return result[0], nil
+	}
+
+	return result[0], result[1].(error)
 }
