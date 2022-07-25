@@ -55,7 +55,7 @@ func getCtorDescriptor(ctorFunc any) (*ctorDescriptor, error) {
 	kind := ctorType.Kind()
 
 	if kind != reflect.Func {
-		return nil, errors.New(fmt.Sprintf("Invalid kind '%s'. Expected '%s'.", kind.String(), reflect.Func.String()))
+		return nil, fmt.Errorf("invalid kind '%s'. Expected '%s'.", kind.String(), reflect.Func.String())
 	}
 
 	inArgsCount := ctorType.NumIn()
@@ -69,13 +69,13 @@ func getCtorDescriptor(ctorFunc any) (*ctorDescriptor, error) {
 	hasError := false
 	outArgsCount := ctorType.NumOut()
 	if outArgsCount > 2 {
-		return nil, errors.New(fmt.Sprintf("Invalid num of out args. Expected maximum 2, got %d.", outArgsCount))
+		return nil, fmt.Errorf("invalid num of out args. Expected maximum 2, got %d.", outArgsCount)
 	}
 	if outArgsCount == 2 {
 		errorType := utils.TypeOfGeneric[error]()
 		secondType := ctorType.Out(1)
 		if !utils.IsOrImplements(secondType, errorType) {
-			return nil, errors.New(fmt.Sprintf("Invalid second argument type. Expected '%s', got '%s'.", errorType.String(), secondType.String()))
+			return nil, fmt.Errorf("invalid second argument type. Expected '%s', got '%s'.", errorType.String(), secondType.String())
 		}
 
 		hasError = true

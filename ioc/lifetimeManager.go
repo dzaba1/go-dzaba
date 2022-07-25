@@ -26,6 +26,7 @@ func (t LifetimeType) String() string {
 type LifetimeManager interface {
 	Type() LifetimeType
 	Instance() any
+	SetInstance(instance any)
 }
 
 type transientLifetime struct {
@@ -41,4 +42,8 @@ func (t *transientLifetime) Type() LifetimeType {
 
 func (t *transientLifetime) Instance() any {
 	return nil
+}
+
+func (t *transientLifetime) SetInstance(instance any) {
+	// Don't cache any instance
 }

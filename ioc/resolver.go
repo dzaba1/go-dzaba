@@ -2,7 +2,6 @@ package ioc
 
 import (
 	"dzaba/go-dzaba/collections"
-	"errors"
 	"fmt"
 	"reflect"
 )
@@ -32,7 +31,7 @@ func (r *resolverImpl) resolveRecurse(serviceType reflect.Type, chain *collectio
 
 	reg, exist := r.services[serviceType]
 	if !exist {
-		return nil, errors.New(fmt.Sprintf("The service '%s' is not registered. Chain: %s", serviceType.String(), formatChain(chain)))
+		return nil, fmt.Errorf("the service '%s' is not registered. Chain: %s", serviceType.String(), formatChain(chain))
 	}
 
 	loop := collections.AnyMust(chain.GetList(), func(elem reflect.Type) bool {
@@ -40,7 +39,7 @@ func (r *resolverImpl) resolveRecurse(serviceType reflect.Type, chain *collectio
 	})
 
 	if loop {
-		return nil, errors.New(fmt.Sprintf("Loop detected. Chain: %s", formatChain(chain)))
+		return nil, fmt.Errorf("loop detected. Chain: %s", formatChain(chain))
 	}
 
 	instance := reg.lifetimeManager.Instance()
@@ -62,6 +61,7 @@ func (r *resolverImpl) resolveRecurse(serviceType reflect.Type, chain *collectio
 		return nil, err
 	}
 
+	reg.lifetimeManager.SetInstance(instance)
 	chain.Pop()
 	return instance, nil
 }
