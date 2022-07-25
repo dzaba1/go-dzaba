@@ -11,10 +11,10 @@ type resolver interface {
 }
 
 type resolverImpl struct {
-	services map[reflect.Type]registrationImpl
+	services map[reflect.Type]*registrationImpl
 }
 
-func newResolver(services map[reflect.Type]registrationImpl) resolver {
+func newResolver(services map[reflect.Type]*registrationImpl) resolver {
 	return &resolverImpl{
 		services: services,
 	}
@@ -27,19 +27,19 @@ func (r *resolverImpl) resolve(serviceType reflect.Type) (any, error) {
 }
 
 func (r *resolverImpl) resolveRecurse(serviceType reflect.Type, chain *collections.Stack[reflect.Type]) (any, error) {
-	chain.Push(serviceType)
-
-	reg, exist := r.services[serviceType]
-	if !exist {
-		return nil, fmt.Errorf("the service '%s' is not registered. Chain: %s", serviceType.String(), formatChain(chain))
-	}
-
 	loop := collections.AnyMust(chain.GetList(), func(elem reflect.Type) bool {
 		return serviceType == elem
 	})
 
 	if loop {
 		return nil, fmt.Errorf("loop detected. Chain: %s", formatChain(chain))
+	}
+
+	chain.Push(serviceType)
+
+	reg, exist := r.services[serviceType]
+	if !exist {
+		return nil, fmt.Errorf("the service '%s' is not registered. Chain: %s", serviceType.String(), formatChain(chain))
 	}
 
 	instance := reg.lifetimeManager.Instance()

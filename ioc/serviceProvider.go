@@ -25,14 +25,17 @@ type ServiceProvider interface {
 }
 
 type serviceProviderImpl struct {
+	resolver resolver
 }
 
-func newServiceProvider() (ServiceProvider, error) {
-	return &serviceProviderImpl{}, nil
+func newServiceProvider(resolver resolver) (ServiceProvider, error) {
+	return &serviceProviderImpl{
+		resolver: resolver,
+	}, nil
 }
 
 func (provider *serviceProviderImpl) Resolve(serviceType reflect.Type) (any, error) {
-	return nil, nil
+	return provider.resolver.resolve(serviceType)
 }
 
 func (provider *serviceProviderImpl) ResolveAll(serviceType reflect.Type) ([]any, error) {

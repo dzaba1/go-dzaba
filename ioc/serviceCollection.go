@@ -15,21 +15,26 @@ type ServiceCollection interface {
 }
 
 type serviceCollectionImpl struct {
-	registrations map[reflect.Type]Registration
+	registrations map[reflect.Type]*registrationImpl
 }
 
 func NewServiceCollection() ServiceCollection {
 	return &serviceCollectionImpl{
-		registrations: make(map[reflect.Type]Registration),
+		registrations: make(map[reflect.Type]*registrationImpl),
 	}
 }
 
 func (services *serviceCollectionImpl) Registrations() map[reflect.Type]Registration {
-	return services.registrations
+	newDict := make(map[reflect.Type]Registration)
+	for key, value := range services.registrations {
+		newDict[key] = value
+	}
+	return newDict
 }
 
 func (services *serviceCollectionImpl) BuildServiceProvder() (ServiceProvider, error) {
-	return newServiceProvider()
+	resolver := newResolver(services.registrations)
+	return newServiceProvider(resolver)
 }
 
 func (services *serviceCollectionImpl) AddTransientSelf(selfType reflect.Type, ctorFunc any) error {

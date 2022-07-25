@@ -42,5 +42,5 @@ func Test_AddTransientSelf_WhenServiceIsRegisteredAsSelfTransientWithoutDependen
 
 	assert.NotNil(t, service1)
 	assert.NotNil(t, service2)
-	assert.Equal(t, service1.GetId(), service2.GetId())
+	assert.NotEqual(t, service1.GetId(), service2.GetId())
 }

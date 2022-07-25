@@ -18,7 +18,7 @@ type registrationImpl struct {
 func newRegistration(ctorDescriptor *ctorDescriptor,
 	serviceType reflect.Type,
 	implType reflect.Type,
-	lifetimeManager LifetimeManager) Registration {
+	lifetimeManager LifetimeManager) *registrationImpl {
 
 	return &registrationImpl{
 		ctorDescriptor:  ctorDescriptor,
