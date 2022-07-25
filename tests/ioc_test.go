@@ -14,6 +14,7 @@ func Test_AddTransientSelf_WhenServiceIsRegisteredAsSelfTransientWithoutDependen
 
 	provider, err := services.BuildServiceProvder()
 	assert.Nil(t, err)
+	defer provider.Close()
 
 	service1, err := ioc.Resolve[*firstTestInterfaceImpl](provider)
 	assert.Nil(t, err)
@@ -33,6 +34,7 @@ func Test_AddSingletonSelf_WhenServiceIsRegisteredAsSelfSingletonWithoutDependen
 
 	provider, err := services.BuildServiceProvder()
 	assert.Nil(t, err)
+	defer provider.Close()
 
 	service1, err := ioc.Resolve[*firstTestInterfaceImpl](provider)
 	assert.Nil(t, err)
@@ -55,6 +57,7 @@ func Test_AddSingletonSelf_WhenServiceIsRegisteredAsSelfTransientWithSingletonDe
 
 	provider, err := services.BuildServiceProvder()
 	assert.Nil(t, err)
+	defer provider.Close()
 
 	service1, err := ioc.Resolve[*secondTestInterfaceImpl](provider)
 	assert.Nil(t, err)

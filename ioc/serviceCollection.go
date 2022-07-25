@@ -35,7 +35,7 @@ func (services *serviceCollectionImpl) Registrations() map[reflect.Type]Registra
 
 func (services *serviceCollectionImpl) BuildServiceProvder() (ServiceProvider, error) {
 	resolver := newResolver(services.registrations)
-	return newServiceProvider(resolver)
+	return newServiceProvider(resolver, services.registrations)
 }
 
 func validateSelfType(selfType reflect.Type, ctorDescriptor *ctorDescriptor) error {

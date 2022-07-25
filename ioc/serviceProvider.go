@@ -6,9 +6,9 @@ import (
 	"reflect"
 )
 
-// type Closeable interface {
-// 	Close() error
-// }
+type Closeable interface {
+	Close() error
+}
 
 // type ServiceScope interface {
 // 	Closeable
@@ -18,6 +18,8 @@ import (
 // }
 
 type ServiceProvider interface {
+	Close() []error
+
 	Resolve(serviceType reflect.Type) (any, error)
 	ResolveAll(serviceType reflect.Type) ([]any, error)
 
@@ -26,11 +28,15 @@ type ServiceProvider interface {
 
 type serviceProviderImpl struct {
 	resolver resolver
+	services map[reflect.Type]*registrationImpl
 }
 
-func newServiceProvider(resolver resolver) (ServiceProvider, error) {
+func newServiceProvider(resolver resolver,
+	services map[reflect.Type]*registrationImpl) (ServiceProvider, error) {
+
 	return &serviceProviderImpl{
 		resolver: resolver,
+		services: services,
 	}, nil
 }
 
@@ -40,6 +46,25 @@ func (provider *serviceProviderImpl) Resolve(serviceType reflect.Type) (any, err
 
 func (provider *serviceProviderImpl) ResolveAll(serviceType reflect.Type) ([]any, error) {
 	return nil, nil
+}
+
+func (provider *serviceProviderImpl) Close() []error {
+	errors := []error{}
+
+	for _, value := range provider.services {
+		inst := value.lifetimeManager.Instance()
+		if inst != nil {
+			cast, ok := inst.(Closeable)
+			if ok {
+				err := cast.Close()
+				if err != nil {
+					errors = append(errors, err)
+				}
+			}
+		}
+	}
+
+	return errors
 }
 
 func Resolve[T any](provider ServiceProvider) (T, error) {
