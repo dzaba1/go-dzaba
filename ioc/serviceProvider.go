@@ -47,12 +47,14 @@ func (provider *serviceProviderImpl) Resolve(serviceType reflect.Type) (any, err
 func (provider *serviceProviderImpl) ResolveAll(serviceType reflect.Type) ([]any, error) {
 	result := []any{}
 
-	for serviceType, _ := range provider.services {
-		service, err := provider.Resolve(serviceType)
-		if err != nil {
-			return nil, err
+	for _, regs := range provider.services {
+		for _, reg := range regs {
+			service, err := provider.resolver.resolveRegistration(reg)
+			if err != nil {
+				return nil, err
+			}
+			result = append(result, service)
 		}
-		result = append(result, service)
 	}
 
 	return result, nil

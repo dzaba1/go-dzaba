@@ -8,6 +8,7 @@ import (
 
 type resolver interface {
 	resolve(serviceType reflect.Type) (any, error)
+	resolveRegistration(reg *registrationImpl) (any, error)
 }
 
 type resolverImpl struct {
@@ -26,23 +27,15 @@ func (r *resolverImpl) resolve(serviceType reflect.Type) (any, error) {
 	return r.resolveRecurse(serviceType, chain)
 }
 
-func (r *resolverImpl) resolveRecurse(serviceType reflect.Type, chain *collections.Stack[reflect.Type]) (any, error) {
-	loop := collections.AnyMust(chain.GetList(), func(elem reflect.Type) bool {
-		return serviceType == elem
-	})
+func (r *resolverImpl) resolveRegistration(reg *registrationImpl) (any, error) {
+	chain := collections.NewStack[reflect.Type]()
 
-	if loop {
-		return nil, fmt.Errorf("loop detected. Chain: %s", formatChain(chain))
-	}
+	return r.resolveRecurseRegistration(reg, chain)
+}
 
-	chain.Push(serviceType)
+func (r *resolverImpl) resolveRecurseRegistration(reg *registrationImpl, chain *collections.Stack[reflect.Type]) (any, error) {
+	chain.Push(reg.serviceType)
 
-	regs, exist := r.services[serviceType]
-	if !exist {
-		return nil, fmt.Errorf("the service '%s' is not registered. Chain: %s", serviceType.String(), formatChain(chain))
-	}
-
-	reg := collections.Last(regs)
 	instance := reg.lifetimeManager.Instance()
 	if instance != nil {
 		return instance, nil
@@ -65,6 +58,24 @@ func (r *resolverImpl) resolveRecurse(serviceType reflect.Type, chain *collectio
 	reg.lifetimeManager.SetInstance(instance)
 	chain.Pop()
 	return instance, nil
+}
+
+func (r *resolverImpl) resolveRecurse(serviceType reflect.Type, chain *collections.Stack[reflect.Type]) (any, error) {
+	loop := collections.AnyMust(chain.GetList(), func(elem reflect.Type) bool {
+		return serviceType == elem
+	})
+
+	if loop {
+		return nil, fmt.Errorf("loop detected. Chain: %s", formatChain(chain))
+	}
+
+	regs, exist := r.services[serviceType]
+	if !exist {
+		return nil, fmt.Errorf("the service '%s' is not registered. Chain: %s", serviceType.String(), formatChain(chain))
+	}
+
+	reg := collections.Last(regs)
+	return r.resolveRecurseRegistration(reg, chain)
 }
 
 func formatChain(chain *collections.Stack[reflect.Type]) string {
