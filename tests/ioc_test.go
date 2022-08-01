@@ -70,3 +70,46 @@ func Test_AddSingletonSelf_WhenServiceIsRegisteredAsSelfTransientWithSingletonDe
 	assert.Equal(t, service1.DependencyId(), service2.DependencyId())
 	assert.NotEqual(t, service1.CurrentId(), service2.CurrentId())
 }
+
+func Test_Resolve_WhenMultipleServicesRegistered_ThenItTakesTheLastOne(t *testing.T) {
+	services := ioc.NewServiceCollection()
+	err := ioc.AddTransientSelf[FirstTestInterface](services, NewFirstTestInterface)
+	assert.Nil(t, err)
+
+	err = ioc.AddTransientSelf[FirstTestInterface](services, NewFirstTestInterfaceSecondImpl)
+	assert.Nil(t, err)
+
+	provider, err := services.BuildServiceProvder()
+	assert.Nil(t, err)
+	defer provider.Close()
+
+	service, err := ioc.Resolve[FirstTestInterface](provider)
+	assert.Nil(t, err)
+
+	expected := NewFirstTestInterfaceSecondImpl()
+	assert.IsType(t, expected, service)
+}
+
+func Test_ResolveAll_WhenMultipleServicesRegistered_ThenItTakesAllOfThem(t *testing.T) {
+	services := ioc.NewServiceCollection()
+	err := ioc.AddTransientSelf[FirstTestInterface](services, NewFirstTestInterface)
+	assert.Nil(t, err)
+
+	err = ioc.AddTransientSelf[FirstTestInterface](services, NewFirstTestInterfaceSecondImpl)
+	assert.Nil(t, err)
+
+	provider, err := services.BuildServiceProvder()
+	assert.Nil(t, err)
+	defer provider.Close()
+
+	result, err := ioc.ResolveAll[FirstTestInterface](provider)
+	assert.Nil(t, err)
+
+	assert.Len(t, result, 2)
+
+	expectedFirst := NewFirstTestInterface()
+	expectedSecond := NewFirstTestInterfaceSecondImpl()
+
+	assert.IsType(t, expectedFirst, result[0])
+	assert.IsType(t, expectedSecond, result[1])
+}
