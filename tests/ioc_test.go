@@ -113,3 +113,25 @@ func Test_ResolveAll_WhenMultipleServicesRegistered_ThenItTakesAllOfThem(t *test
 	assert.IsType(t, expectedFirst, result[0])
 	assert.IsType(t, expectedSecond, result[1])
 }
+
+func Test_Resolve_WhenArrayAsDependency_ThenItIsResolved(t *testing.T) {
+	services := ioc.NewServiceCollection()
+	err := ioc.AddTransientSelf[FirstTestInterface](services, NewFirstTestInterface)
+	assert.Nil(t, err)
+
+	err = ioc.AddTransientSelf[FirstTestInterface](services, NewFirstTestInterfaceSecondImpl)
+	assert.Nil(t, err)
+
+	err = ioc.AddTransientSelf[AggregatedInterfaces](services, NewAggregatedInterfaces)
+	assert.Nil(t, err)
+
+	provider, err := services.BuildServiceProvder()
+	assert.Nil(t, err)
+	defer provider.Close()
+
+	result, err := ioc.Resolve[AggregatedInterfaces](provider)
+	assert.Nil(t, err)
+
+	ids := result.GetDependencyIds()
+	assert.Len(t, ids, 2)
+}
