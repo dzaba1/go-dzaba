@@ -1,6 +1,8 @@
 package ioc
 
 import (
+	"dzaba/go-dzaba/collections"
+
 	"github.com/google/uuid"
 )
 
@@ -11,6 +13,10 @@ type FirstTestInterface interface {
 type SecondTestInterface interface {
 	DependencyId() uuid.UUID
 	CurrentId() uuid.UUID
+}
+
+type AggregatedInterfaces interface {
+	GetDependencyIds() []uuid.UUID
 }
 
 type firstTestInterfaceImpl struct {
@@ -24,6 +30,10 @@ type firstTestInterfaceSecondImpl struct {
 type secondTestInterfaceImpl struct {
 	dependency FirstTestInterface
 	id         uuid.UUID
+}
+
+type aggregatedInterfacesImpl struct {
+	dependency []FirstTestInterface
 }
 
 func NewFirstTestInterface() FirstTestInterface {
@@ -45,6 +55,12 @@ func NewSecondTestInterface(dependency FirstTestInterface) SecondTestInterface {
 	}
 }
 
+func NewAggregatedInterfaces(dependency []FirstTestInterface) AggregatedInterfaces {
+	return &aggregatedInterfacesImpl{
+		dependency: dependency,
+	}
+}
+
 func (impl *firstTestInterfaceImpl) GetId() uuid.UUID {
 	return impl.id
 }
@@ -59,4 +75,10 @@ func (impl *secondTestInterfaceImpl) DependencyId() uuid.UUID {
 
 func (impl *secondTestInterfaceImpl) CurrentId() uuid.UUID {
 	return impl.id
+}
+
+func (impl *aggregatedInterfacesImpl) GetDependencyIds() []uuid.UUID {
+	return collections.SelectMust(impl.dependency, func(element FirstTestInterface) uuid.UUID {
+		return element.GetId()
+	})
 }
