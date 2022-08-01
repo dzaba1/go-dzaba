@@ -26,3 +26,7 @@ func ContainsMust[T comparable](col []T, elem T) bool {
 		return elem == elem2
 	})
 }
+
+func Last[T any](col []T) T {
+	return col[len(col)-1]
+}

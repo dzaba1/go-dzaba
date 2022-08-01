@@ -9,26 +9,31 @@ import (
 
 type ServiceCollection interface {
 	BuildServiceProvder() (ServiceProvider, error)
-	Registrations() map[reflect.Type]Registration
+	Registrations() map[reflect.Type][]Registration
 
 	AddTransientSelf(selfType reflect.Type, ctorFunc any) error
 	AddSingletonSelf(selfType reflect.Type, ctorFunc any) error
 }
 
 type serviceCollectionImpl struct {
-	registrations map[reflect.Type]*registrationImpl
+	registrations map[reflect.Type][]*registrationImpl
 }
 
 func NewServiceCollection() ServiceCollection {
 	return &serviceCollectionImpl{
-		registrations: make(map[reflect.Type]*registrationImpl),
+		registrations: make(map[reflect.Type][]*registrationImpl),
 	}
 }
 
-func (services *serviceCollectionImpl) Registrations() map[reflect.Type]Registration {
-	newDict := make(map[reflect.Type]Registration)
+func (services *serviceCollectionImpl) Registrations() map[reflect.Type][]Registration {
+	newDict := make(map[reflect.Type][]Registration)
 	for key, value := range services.registrations {
-		newDict[key] = value
+		newArray := []Registration{}
+		for _, reg := range value {
+			newArray = append(newArray, reg)
+		}
+
+		newDict[key] = newArray
 	}
 	return newDict
 }
@@ -60,9 +65,15 @@ func (services *serviceCollectionImpl) AddTransientSelf(selfType reflect.Type, c
 
 	lifetime := newTransientLifetimeManager()
 	registration := newRegistration(ctorDescriptor, selfType, selfType, lifetime)
-	services.registrations[selfType] = registration
+	services.addRegistration(registration)
 
 	return nil
+}
+
+func (services *serviceCollectionImpl) addRegistration(registration *registrationImpl) {
+	regs := services.registrations[registration.serviceType]
+	regs = append(regs, registration)
+	services.registrations[registration.serviceType] = regs
 }
 
 func (services *serviceCollectionImpl) AddSingletonSelf(selfType reflect.Type, ctorFunc any) error {
@@ -78,7 +89,7 @@ func (services *serviceCollectionImpl) AddSingletonSelf(selfType reflect.Type, c
 
 	lifetime := newSingletonLifetimeManager()
 	registration := newRegistration(ctorDescriptor, selfType, selfType, lifetime)
-	services.registrations[selfType] = registration
+	services.addRegistration(registration)
 
 	return nil
 }

@@ -28,11 +28,11 @@ type ServiceProvider interface {
 
 type serviceProviderImpl struct {
 	resolver resolver
-	services map[reflect.Type]*registrationImpl
+	services map[reflect.Type][]*registrationImpl
 }
 
 func newServiceProvider(resolver resolver,
-	services map[reflect.Type]*registrationImpl) (ServiceProvider, error) {
+	services map[reflect.Type][]*registrationImpl) (ServiceProvider, error) {
 
 	return &serviceProviderImpl{
 		resolver: resolver,
@@ -45,20 +45,32 @@ func (provider *serviceProviderImpl) Resolve(serviceType reflect.Type) (any, err
 }
 
 func (provider *serviceProviderImpl) ResolveAll(serviceType reflect.Type) ([]any, error) {
-	return nil, nil
+	result := []any{}
+
+	for serviceType, _ := range provider.services {
+		service, err := provider.Resolve(serviceType)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, service)
+	}
+
+	return result, nil
 }
 
 func (provider *serviceProviderImpl) Close() []error {
 	errors := []error{}
 
-	for _, value := range provider.services {
-		inst := value.lifetimeManager.Instance()
-		if inst != nil {
-			cast, ok := inst.(Closeable)
-			if ok {
-				err := cast.Close()
-				if err != nil {
-					errors = append(errors, err)
+	for _, registrations := range provider.services {
+		for _, reg := range registrations {
+			inst := reg.lifetimeManager.Instance()
+			if inst != nil {
+				cast, ok := inst.(Closeable)
+				if ok {
+					err := cast.Close()
+					if err != nil {
+						errors = append(errors, err)
+					}
 				}
 			}
 		}
