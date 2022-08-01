@@ -17,6 +17,10 @@ type firstTestInterfaceImpl struct {
 	id uuid.UUID
 }
 
+type firstTestInterfaceSecondImpl struct {
+	id uuid.UUID
+}
+
 type secondTestInterfaceImpl struct {
 	dependency FirstTestInterface
 	id         uuid.UUID
@@ -24,6 +28,12 @@ type secondTestInterfaceImpl struct {
 
 func NewFirstTestInterface() FirstTestInterface {
 	return &firstTestInterfaceImpl{
+		id: uuid.New(),
+	}
+}
+
+func NewFirstTestInterfaceSecondImpl() FirstTestInterface {
+	return &firstTestInterfaceSecondImpl{
 		id: uuid.New(),
 	}
 }
@@ -36,6 +46,10 @@ func NewSecondTestInterface(dependency FirstTestInterface) SecondTestInterface {
 }
 
 func (impl *firstTestInterfaceImpl) GetId() uuid.UUID {
+	return impl.id
+}
+
+func (impl *firstTestInterfaceSecondImpl) GetId() uuid.UUID {
 	return impl.id
 }
 
