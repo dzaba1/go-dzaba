@@ -4,6 +4,8 @@ import (
 	"dzaba/go-dzaba/collections"
 	"dzaba/go-dzaba/utils"
 	"reflect"
+
+	"github.com/google/uuid"
 )
 
 type Closeable interface {
@@ -29,6 +31,7 @@ type ServiceProvider interface {
 type serviceProviderImpl struct {
 	resolver resolver
 	services map[reflect.Type][]*registrationImpl
+	id       uuid.UUID
 }
 
 func newServiceProvider(resolver resolver,
@@ -37,11 +40,12 @@ func newServiceProvider(resolver resolver,
 	return &serviceProviderImpl{
 		resolver: resolver,
 		services: services,
+		id:       uuid.New(),
 	}, nil
 }
 
 func (provider *serviceProviderImpl) Resolve(serviceType reflect.Type) (any, error) {
-	return provider.resolver.resolve(serviceType)
+	return provider.resolver.resolve(serviceType, provider.id)
 }
 
 func (provider *serviceProviderImpl) ResolveAll(serviceType reflect.Type) ([]any, error) {
@@ -49,7 +53,7 @@ func (provider *serviceProviderImpl) ResolveAll(serviceType reflect.Type) ([]any
 
 	for _, regs := range provider.services {
 		for _, reg := range regs {
-			service, err := provider.resolver.resolveRegistration(reg)
+			service, err := provider.resolver.resolveRegistration(reg, provider.id)
 			if err != nil {
 				return nil, err
 			}
@@ -65,7 +69,7 @@ func (provider *serviceProviderImpl) Close() []error {
 
 	for _, registrations := range provider.services {
 		for _, reg := range registrations {
-			inst := reg.lifetimeManager.Instance()
+			inst := reg.lifetimeManager.Instance(provider.id)
 			if inst != nil {
 				cast, ok := inst.(Closeable)
 				if ok {
@@ -74,6 +78,7 @@ func (provider *serviceProviderImpl) Close() []error {
 						errors = append(errors, err)
 					}
 				}
+				reg.lifetimeManager.ClearInstance(provider.id)
 			}
 		}
 	}

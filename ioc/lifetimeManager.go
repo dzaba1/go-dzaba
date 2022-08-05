@@ -1,5 +1,7 @@
 package ioc
 
+import "github.com/google/uuid"
+
 type LifetimeType byte
 
 const (
@@ -25,6 +27,7 @@ func (t LifetimeType) String() string {
 
 type LifetimeManager interface {
 	Type() LifetimeType
-	Instance() any
-	SetInstance(instance any)
+	Instance(scopeId uuid.UUID) any
+	SetInstance(instance any, scopeId uuid.UUID)
+	ClearInstance(scopeId uuid.UUID)
 }
