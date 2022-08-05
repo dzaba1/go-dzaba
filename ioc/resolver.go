@@ -71,11 +71,38 @@ func (r *resolverImpl) resolveRecurse(serviceType reflect.Type, chain *collectio
 
 	regs, exist := r.services[serviceType]
 	if !exist {
+		serviceKind := serviceType.Kind()
+		if serviceKind == reflect.Array || serviceKind == reflect.Slice {
+			serviceElementType := serviceType.Elem()
+			return r.resolveArray(serviceElementType, chain)
+		}
+
 		return nil, fmt.Errorf("the service '%s' is not registered. Chain: %s", serviceType.String(), formatChain(chain))
 	}
 
 	reg := collections.Last(regs)
 	return r.resolveRecurseRegistration(reg, chain)
+}
+
+func (r *resolverImpl) resolveArray(serviceType reflect.Type, chain *collections.Stack[reflect.Type]) (any, error) {
+	regs, exist := r.services[serviceType]
+	if !exist {
+		return nil, fmt.Errorf("the service '%s' is not registered. Chain: %s", serviceType.String(), formatChain(chain))
+	}
+
+	sliceType := reflect.SliceOf(serviceType)
+	instancesValues := reflect.MakeSlice(sliceType, 0, len(regs))
+	for _, reg := range regs {
+		instance, err := r.resolveRecurseRegistration(reg, chain)
+		if err != nil {
+			return nil, err
+		}
+
+		instanceValue := reflect.ValueOf(instance)
+		instancesValues = reflect.Append(instancesValues, instanceValue)
+	}
+
+	return instancesValues.Interface(), nil
 }
 
 func formatChain(chain *collections.Stack[reflect.Type]) string {
