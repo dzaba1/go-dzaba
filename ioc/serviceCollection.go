@@ -13,6 +13,7 @@ type ServiceCollection interface {
 
 	AddTransientSelf(selfType reflect.Type, ctorFunc any) error
 	AddSingletonSelf(selfType reflect.Type, ctorFunc any) error
+	AddScopedSelf(selfType reflect.Type, ctorFunc any) error
 }
 
 type serviceCollectionImpl struct {
@@ -94,6 +95,24 @@ func (services *serviceCollectionImpl) AddSingletonSelf(selfType reflect.Type, c
 	return nil
 }
 
+func (services *serviceCollectionImpl) AddScopedSelf(selfType reflect.Type, ctorFunc any) error {
+	ctorDescriptor, err := getCtorDescriptor(ctorFunc)
+	if err != nil {
+		return err
+	}
+
+	err = validateSelfType(selfType, ctorDescriptor)
+	if err != nil {
+		return err
+	}
+
+	lifetime := newScopedLifetimeManager()
+	registration := newRegistration(ctorDescriptor, selfType, selfType, lifetime)
+	services.addRegistration(registration)
+
+	return nil
+}
+
 func getCtorDescriptor(ctorFunc any) (*ctorDescriptor, error) {
 	ctorType := reflect.TypeOf(ctorFunc)
 	kind := ctorType.Kind()
@@ -146,4 +165,10 @@ func AddSingletonSelf[T any](services ServiceCollection, ctorFunc any) error {
 	genType := utils.TypeOfGeneric[T]()
 
 	return services.AddSingletonSelf(genType, ctorFunc)
+}
+
+func AddScopedSelf[T any](services ServiceCollection, ctorFunc any) error {
+	genType := utils.TypeOfGeneric[T]()
+
+	return services.AddScopedSelf(genType, ctorFunc)
 }
