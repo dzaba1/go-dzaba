@@ -25,9 +25,13 @@ func (t LifetimeType) String() string {
 	return "Unknown"
 }
 
-type LifetimeManager interface {
-	Type() LifetimeType
+type LifetimeManagerBase interface {
 	Instance(scopeId uuid.UUID) any
 	SetInstance(instance any, scopeId uuid.UUID)
 	ClearInstance(scopeId uuid.UUID)
+}
+
+type LifetimeManager interface {
+	LifetimeManagerBase
+	Type() LifetimeType
 }
