@@ -135,3 +135,42 @@ func Test_Resolve_WhenArrayAsDependency_ThenItIsResolved(t *testing.T) {
 	ids := result.GetDependencyIds()
 	assert.Len(t, ids, 2)
 }
+
+func Test_AddSingletonSelf_WhenServiceIsRegisteredAsSelfScopedWithoutDependencies_ThenTheSameInstance(t *testing.T) {
+	services := ioc.NewServiceCollection()
+	err := ioc.AddScopedSelf[*firstTestInterfaceImpl](services, NewFirstTestInterface)
+	assert.Nil(t, err)
+
+	provider, err := services.BuildServiceProvder()
+	assert.Nil(t, err)
+	defer provider.Close()
+
+	service1, err := ioc.Resolve[*firstTestInterfaceImpl](provider)
+	assert.Nil(t, err)
+
+	service2, err := ioc.Resolve[*firstTestInterfaceImpl](provider)
+	assert.Nil(t, err)
+
+	scope1, err := provider.CreateScope()
+	assert.Nil(t, err)
+	defer scope1.Close()
+
+	scope2, err := provider.CreateScope()
+	assert.Nil(t, err)
+	defer scope2.Close()
+
+	service3, err := ioc.Resolve[*firstTestInterfaceImpl](scope1)
+	assert.Nil(t, err)
+
+	service4, err := ioc.Resolve[*firstTestInterfaceImpl](scope2)
+	assert.Nil(t, err)
+
+	assert.NotNil(t, service1)
+	assert.NotNil(t, service2)
+	assert.NotNil(t, service3)
+	assert.NotNil(t, service4)
+
+	assert.Equal(t, service1.GetId(), service2.GetId())
+	assert.NotEqual(t, service1.GetId(), service3.GetId())
+	assert.NotEqual(t, service3.GetId(), service4.GetId())
+}

@@ -86,7 +86,7 @@ func (provider *serviceProviderImpl) CreateScope() (ServiceScope, error) {
 	return newServiceProvider(provider.resolver, provider.services)
 }
 
-func Resolve[T any](provider ServiceProvider) (T, error) {
+func Resolve[T any](provider ServiceScope) (T, error) {
 	service, err := provider.Resolve(utils.TypeOfGeneric[T]())
 	if err != nil {
 		return utils.DefaultGeneric[T](), err
@@ -95,7 +95,7 @@ func Resolve[T any](provider ServiceProvider) (T, error) {
 	return service.(T), nil
 }
 
-func ResolveAll[T any](provider ServiceProvider) ([]T, error) {
+func ResolveAll[T any](provider ServiceScope) ([]T, error) {
 	services, err := provider.ResolveAll(utils.TypeOfGeneric[T]())
 	if err != nil {
 		return nil, err
